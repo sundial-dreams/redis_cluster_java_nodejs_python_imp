@@ -1,0 +1,41 @@
+# linux ubuntu 18.4, redis: 5.0.3
+# 基本步骤：建立6个节点的集群
+# 复制6份redis.conf，修改端口为9000 9001 9002 9003 9004 9005，以及其他相关字段
+# 启动6个节点
+# 使用redic-cli --cluster create命令创建6个节点的集群
+
+cd ./redis-5.0.3/cluster
+mkdir cluster9000 cluster9001 cluster9002 cluster9003 cluster9004 cluster9005
+cd ..
+cp redis.conf ./cluster/cluster9000/
+# 重命名 redis.conf 为 cluster.conf
+cd ./cluster/cluster9000
+vim cluster.conf
+# 修改以下字段:
+#    port 9000
+#    dir "/home/dengpengfei/Documents/redis-5.0.3/cluster/cluster9000"
+#    appendonly yes 
+#    cluster-enabled yes
+#    cluster-config-file "nodes9000.conf"
+#    cluster-node-timeout 5000
+#    daemonize yes
+
+# 复制5份
+cp cluster.conf ../cluster9001/
+cp cluster.conf ../cluster9002/
+cp cluster.conf ../cluster9003/
+cp cluster.conf ../cluster9004/
+cp cluster.conf ../cluster9005/
+# 替换 cluster.conf 中的 9000 为 9001 或 9002 或 9003 或 9004 或 9005
+
+cd ..
+# 启动6个节点
+./scr/redis-server ./cluster/cluster9000/cluster.conf
+./scr/redis-server ./cluster/cluster9001/cluster.conf
+./scr/redis-server ./cluster/cluster9002/cluster.conf
+./scr/redis-server ./cluster/cluster9003/cluster.conf
+./scr/redis-server ./cluster/cluster9004/cluster.conf
+./scr/redis-server ./cluster/cluster9005/cluster.conf
+
+# 创建集群
+ ./src/redis-cli --cluster create 127.0.0.1:9000 127.0.0.1:9001 127.0.0.1:9002 127.0.0.1:9003 127.0.0.1:9004 127.0.0.1:9005

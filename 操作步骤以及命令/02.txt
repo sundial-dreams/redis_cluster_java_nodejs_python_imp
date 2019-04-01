@@ -1,0 +1,17 @@
+# linux ubuntu 18.4, redis: 5.0.3
+# 基本步骤，复制3份redis.conf，分别修改端口为8000，8001，8002，然后启动即可
+cd redis-5.0.3
+mkdir node
+cp redis.conf ./node/
+# 重命名 redis.conf 为 node01.conf node02.conf node03.conf
+vim node01.conf 
+# 修改 port 8000
+vim node02.conf
+# 修改 port 8001
+vim node03.conf
+# 修改 port 8002
+cd ..
+./src/redis-server ./node/node01.conf
+./src/redis-server ./node/node02.conf
+./src/redis-server ./node/node03.conf
+# 启动3个主节点

@@ -1,0 +1,91 @@
+# linux ubuntu 18.4, redis: 5.0.3
+# 基本步骤，复制3份redis.conf 并分别修改端口为 7001 7002 7003，分别启动，并将主节点端口修改为7000
+# 使用命令 slaveof localhost 7000 使7001 7002 7003成为主节点7000的从节点
+# 复制3份sentinel.conf 并使用编辑器修改port, daemonize yes, sentinel monitor mymaster 127.0.0.1 7000 2 
+# 启动哨兵节点
+# 1主3从3哨兵集群搭建完毕
+
+cd redis-5.0.3
+vim redis.conf 
+
+# 修改字段 port 7000, protectmode no
+
+./src/redis-server redis.conf
+# 在7000端口上启动主节点
+mkdir cluster
+cd cluster
+mkdir 7001 7002 7003
+cd ..
+
+# 从节点
+# 复制 redis.conf 到 7001、7002、7003 目录下
+cp redis.conf ./cluster/7001/
+cp redis.conf ./cluster/7002/
+cp redis.conf ./cluster/7003/
+
+cd cluster
+
+vim ./7001/redis.conf
+#修改端口 port 7001
+
+vim ./7002/redis.conf
+#修改端口 port 7002
+
+vim ./7003/redis.conf
+#修改端口 port 7003
+
+cd ..
+./src/redis-server ./cluster/7001/redis.conf
+#启动7001节点
+
+./src/redis-cli -p 7001
+127.0.0.1:7001> slaveof localhost 7000
+# 设置7001节点为7000的从节点
+
+./src/redis-server ./cluster/7002/redis.conf
+./src/redis-cli -p 7002
+127.0.0.1:7002> slaveof localhost 7000
+
+./src/redis-server ./cluster/7003/redis.conf
+./src/redis-cli -p 7003
+127.0.0.1:7003> slaveof localhost 7000
+127.0.0.1:7003> info replication
+# 获取从节点7003的信息
+
+./src/redis-cli -p 7000
+127.0.0.1:7000> set name dengpengfei
+# 主节点7000上设置值
+127.0.0.1:7001> get name
+# 从节点7001上获取值
+
+# 哨兵节点
+cd cluster
+mkdir sentinel01 sentinel02 sentinel03
+cd ..
+cp sentinel.conf ./cluster/sentinel01/
+cp sentinel.conf ./cluster/sentinel02/
+cp sentinel.conf ./cluster/sentinel03/
+vim ./cluster/sentinel01/sentinel.conf
+# 修改字段 daemonize yes, sentinel monitor mymaster 127.0.0.1 7000 2 
+vim ./cluster/sentinel02/sentinel.conf
+# 修改字段 port 26380, daemonize yes, sentinel monitor mymaster 127.0.0.1 7000 2 
+vim ./cluster/sentinel03/sentinel.conf
+# 修改字段 port 26381, daemonize yes, sentinel monitor mymaster 127.0.0.1 7000 2 
+
+cd ..
+
+./src/redis-server ./cluster/sentinel01/sentinel.conf
+# 启动哨兵节点，端口：26379
+
+./src/redis-server ./cluster/sentinel02/sentinel.conf
+./src/redis-server ./cluster/sentinel03/sentinel.conf
+
+./src/redis-cli -p 26379
+127.0.0.1:26379> info sentinel
+# 获取哨兵节点信息
+
+127.0.0.1:7000> shutdown
+# 关闭主节点，哨兵节点将会选择7002当为主节点
+./src/redis-server redis.conf
+# 启动7000节点，将自动变为7002的从节点
+
